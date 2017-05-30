@@ -15,6 +15,7 @@ const int HASH_SIZE = ( 1024 * 16 );
 struct entry
 {
 	unsigned key;
+	unsigned bucket;
 	std::string name;
 };
 
@@ -55,34 +56,58 @@ class HashMap
 			table[i] = nullptr;
 	}
 
-	std::string get1(unsigned key)
+	bool checkKey(unsigned key)
 	{
-		unsigned bucket = getBucket(key);
+		unsigned start = (key % size);
+		unsigned bucket = start;
 
-		if (bucket != -1)
-			return table[bucket]->getValue1();
+		while (table[bucket] != nullptr && table[bucket]->getKey() != key)
+		{
+			bucket = (bucket + 1) % size;
+			if (bucket == start)
+				break;
+		}
 
-		return std::string("NOT_FOUND");
+		if (table[bucket] == nullptr)
+			return false;
+		else if (table[bucket]->getKey() == key)
+			return true;
+
+		return false;
 	}
 
-	int get2(unsigned key)
+	std::string get1(unsigned key)
 	{
-		unsigned bucket = getBucket(key);
-
-		if (bucket != -1)
+		if (checkKey(key))
 		{
+			unsigned bucket = getBucket(key);
+			return table[bucket]->getValue1();
+		}
+
+		std::cout << "Error cannot get key:" << key << "  does not exist\n";
+		exit(-1);
+	}
+
+
+	unsigned get2(unsigned key)
+	{
+		if (checkKey(key))
+		{
+			unsigned bucket = getBucket(key);
 			return table[bucket]->getValue2();
 		}
 
-		return -1;
+		std::cout << "Error cannot get key:" << key << "  does not exist\n";
+		exit(-1);
 	}
 
-	void increment2(unsigned key)
+	void increment(unsigned key)
 	{
-		unsigned bucket = getBucket(key);
-
-		if (bucket != -1)
+		if (checkKey(key))
+		{
+			unsigned bucket = getBucket(key);
 			table[bucket]->increment();
+		}
 	}
 
 	void put(unsigned key, std::string value1)
@@ -106,6 +131,7 @@ class HashMap
 		table[bucket] = new HashEntry(key, value1);
 		entry temp;
 		temp.key = key;
+		temp.bucket = bucket;
 		temp.name = value1;
 		list.emplace_back(temp);
 	}
@@ -125,7 +151,7 @@ class HashMap
 	{
 		for (unsigned i = 0; i < list.size(); ++i)
 		{
-			std::cout << i << " key=" << list[i].key << "  name=" << list[i].name << "\n";
+			std::cout << i << " key=" << "  bucket=" << list[i].bucket << list[i].key << "  name=" << list[i].name << "\n";
 		}
 	}
 
@@ -135,23 +161,19 @@ class HashMap
 	unsigned size;
 	std::vector<entry> list;
 
-	int getBucket(unsigned key)
+	unsigned getBucket(unsigned key)
 	{
-
-		unsigned start = (key % size);
-		unsigned bucket = start;
-
-		while (table[bucket] != nullptr && table[bucket]->getKey() != key)
+		if (checkKey(key))
 		{
-			bucket = (bucket + 1) % size;
-			if (bucket == start)
-				break;
+			unsigned bucket = (key % size);
+
+			while (table[bucket] != nullptr && table[bucket]->getKey() != key)
+				bucket = (bucket + 1) % size;
+
+			return bucket;
 		}
 
-		if (table[bucket] != nullptr && table[bucket]->getKey() == key)
-			return (int)bucket;
-
-		return -1;
+		return UINT_MAX;
 	}
 };
 
@@ -220,11 +242,12 @@ int main(int argc, char *argv[])
 	bmpFile.seekg(10);
 	bmpFile.read((char *)&bitmapStart, sizeof(bitmapStart));
 
+	copyrightMap.dumpList();
 
 	unsigned padding = (width * 3) % 4;
 	char red, green, blue;
 	bmpFile.seekg(bitmapStart);
-	unsigned unfound = 0;
+	unsigned unfound = 0, oldkey = 999999,  searchkey = 99999;
 	for (unsigned y = 0; y < height; ++y)
 	{
 		for (unsigned x = 0; x < width; ++x)
@@ -234,9 +257,21 @@ int main(int argc, char *argv[])
 			bmpFile.read(&red, 1);
 			key = ((((red << 8) | green) << 8) | blue);
 
-			if (copyrightMap.get2(key) != -1)
+			if (key != searchkey)
 			{
-				copyrightMap.increment2(key);
+				std::cout << "checking key=" << key << "\n";
+				searchkey = key;
+			}
+
+			if (copyrightMap.checkKey(key))
+			{
+				if (key != oldkey)
+				{
+					std::cout << "Found key=" << key << "\n";
+					oldkey = key;
+				}
+				
+				copyrightMap.increment(key);
 			}
 				
 			else
@@ -252,16 +287,14 @@ int main(int argc, char *argv[])
 	for (unsigned i = 0, size = list.size(); i < size; ++i)
 	{
 		key = list[i].key;
-		std::string name = list[i].name;
 		std::cout << "(R=" << ((key & 0xFF0000) >> 16);
 		std::cout << ", G=" << ((key & 0xFF00) >> 8);
 		std::cout << ", B=" << (key & 0xFF);
-		std::cout << ")   " << copyrightMap.get1(key) << "=" << copyrightMap.get2(key) << "   " << name << "\n";
+		std::cout << ")   key=" << key;
+		std::cout << "   " << copyrightMap.get1(key) << "=" << copyrightMap.get2(key) << "   " << name << "\n";
 	}
 
 	std::cout << "Colors not in file=" << unfound << "\n";
-
-	copyrightMap.dumpList();
 
 	gotTime2 = GetProcessTimes(myProcess, creation, exitT, kernel, user);
 	if (!gotTime2) {
