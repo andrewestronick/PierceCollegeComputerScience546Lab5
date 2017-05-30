@@ -1,0 +1,65 @@
+253	213	177	Apricot
+149	224	232	Aquamarine
+254	111	94	Bittersweet
+0	0	0	Black
+46	180	230	Blue
+200	200	205	Blue-Gray
+0	149	183	Blue-Green
+100	86	183	Blue-Violet
+198	45	66	Brick Red
+175	89	62	Brown
+255	112	52	Burnt Orange
+233	116	81	Burnt Sienna
+169	178	195	Cadet Blue
+255	166	201	Carnation Pink
+185	78	72	Chestnut
+218	138	103	Copper
+147	204	234	Cornflower
+95	167	119	Forest Green
+146	146	110	Gold
+252	214	103	Goldenrod
+139	134	128	Gray
+58	166	85	Green
+40	135	200	Green-Blue
+241	231	136	Green-Yellow
+191	143	204	Lavender
+255	255	159	Lemon Yellow
+246	83	166	Magenta
+202	52	53	Mahogany
+242	198	73	Maize
+195	33	72	Maroon
+254	186	173	Melon
+0	70	140	Midnight Blue
+200	80	155	Mulberry
+0	102	204	Navy Blue
+181	179	92	Olive Green
+255	136	100	Orange
+255	63	52	Orange-Red
+248	213	104	Orange-Yellow
+226	156	210	Orchid
+255	203	164	Peach
+195	205	230	Periwinkle
+1	120	111	Pine Green
+142	49	121	Plum
+210	125	70	Raw Sienna
+102	82	51	Raw Umber
+237	10	63	Red
+255	104	31	Red-Orange
+187	51	133	Red-Violet
+255	145	164	Salmon
+253	14	53	Scarlet
+147	223	184	Sea Green
+158	91	64	Sepia
+201	192	187	Silver
+118	215	234	Sky Blue
+236	235	189	Spring Green
+217	154	108	Tan
+235	176	215	Thistle
+108	218	231	Turquoise Blue
+115	46	108	Violet
+118	110	200	Violet-Blue
+247	70	138	Violet-Red
+255	255	255	White
+252	232	131	Yellow
+197	225	122	Yellow-Green
+255	174	66	Yellow-Orange
