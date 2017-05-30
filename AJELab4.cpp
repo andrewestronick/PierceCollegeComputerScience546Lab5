@@ -151,7 +151,7 @@ class HashMap
 	{
 		for (unsigned i = 0; i < list.size(); ++i)
 		{
-			std::cout << i << " key=" << "  bucket=" << list[i].bucket << list[i].key << "  name=" << list[i].name << "\n";
+			std::cout << i << " key=" << list[i].key << "  bucket=" << list[i].bucket << "  name=" << list[i].name << "\n";
 		}
 	}
 
@@ -242,19 +242,17 @@ int main(int argc, char *argv[])
 	bmpFile.seekg(10);
 	bmpFile.read((char *)&bitmapStart, sizeof(bitmapStart));
 
-	copyrightMap.dumpList();
-
 	unsigned padding = (width * 3) % 4;
-	char red, green, blue;
+	unsigned char red, green, blue;
 	bmpFile.seekg(bitmapStart);
 	unsigned unfound = 0, oldkey = 999999,  searchkey = 99999;
 	for (unsigned y = 0; y < height; ++y)
 	{
 		for (unsigned x = 0; x < width; ++x)
 		{
-			bmpFile.read(&blue, 1);
-			bmpFile.read(&green, 1);
-			bmpFile.read(&red, 1);
+			bmpFile.read((char *)&blue, 1);
+			bmpFile.read((char *)&green, 1);
+			bmpFile.read((char *)&red, 1);
 			key = ((((red << 8) | green) << 8) | blue);
 
 			if (key != searchkey)
@@ -295,6 +293,8 @@ int main(int argc, char *argv[])
 	}
 
 	std::cout << "Colors not in file=" << unfound << "\n";
+
+	copyrightMap.dumpList();
 
 	gotTime2 = GetProcessTimes(myProcess, creation, exitT, kernel, user);
 	if (!gotTime2) {
