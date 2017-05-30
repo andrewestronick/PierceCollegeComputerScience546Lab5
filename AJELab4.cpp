@@ -1,6 +1,7 @@
 // Estronick, Andrew CS546 Section 3122  June 2, 2017
 // Lab Assignment 5 – Search bitmap for copyright colors
 
+
 #define PICTURE_FILE "c:\\temp\\CS546Lab5TestImage.bmp"
 #define COLOR_FILE "c:\\temp\\Colors64.txt"
 const int HASH_SIZE = ( 1024 * 16 );
