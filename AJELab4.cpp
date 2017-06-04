@@ -12,169 +12,126 @@ const int HASH_SIZE = ( 1024 * 16 );
 #include<sstream>
 #include "windows.h"
 
-struct entry
-{
-	unsigned key;
-	unsigned bucket;
-	std::string name;
-};
-
 ULONGLONG getTime64(LPFILETIME a);
 
-class HashEntry
+class colorhash
 {
-	public:
-
-	HashEntry(unsigned key, std::string value1) { this->key = key; this->value1 = value1; this->value2 = 0; }
-	
-	int getKey() { return key; }
-
-	std::string getValue1() { return value1; }
-	
-	int getValue2() { return value2; }
-
-	void increment(void) { ++value2; }
-
-	private:
-
-	int key;
-	std::string value1;
-	int value2;
-};
-
-
-class HashMap
-{
-	public:
-
-	HashMap(unsigned size)
+public:
+	colorhash(unsigned size)
 	{
 		this->size = size;
-		table = new HashEntry*[size];
+		table = new color*[size];
 
 		for (unsigned i = 0; i < size; ++i)
 			table[i] = nullptr;
 	}
-
-	bool checkKey(unsigned key)
-	{
-		unsigned start = (key % size);
-		unsigned bucket = start;
-
-		while (table[bucket] != nullptr && table[bucket]->getKey() != key)
-		{
-			bucket = (bucket + 1) % size;
-			if (bucket == start)
-				break;
-		}
-
-		if (table[bucket] == nullptr)
-			return false;
-		else if (table[bucket]->getKey() == key)
-			return true;
-
-		return false;
-	}
-
-	std::string get1(unsigned key)
-	{
-		if (checkKey(key))
-		{
-			unsigned bucket = getBucket(key);
-			return table[bucket]->getValue1();
-		}
-
-		std::cout << "Error cannot get key:" << key << "  does not exist\n";
-		exit(-1);
-	}
-
-
-	unsigned get2(unsigned key)
-	{
-		if (checkKey(key))
-		{
-			unsigned bucket = getBucket(key);
-			return table[bucket]->getValue2();
-		}
-
-		std::cout << "Error cannot get key:" << key << "  does not exist\n";
-		exit(-1);
-	}
-
-	void increment(unsigned key)
-	{
-		if (checkKey(key))
-		{
-			unsigned bucket = getBucket(key);
-			table[bucket]->increment();
-		}
-	}
-
-	void put(unsigned key, std::string value1)
-	{
-		unsigned start = (key % size);
-		unsigned bucket = start;
-
-		while (table[bucket] != nullptr)
-		{
-			bucket = (bucket + 1) % size;
-			if (bucket == start)
-				break;
-		}
-			
-		if (table[bucket] != nullptr)
-		{
-			std::cout << "Hash table is full!\n";
-			exit(-1);
-		}
-
-		table[bucket] = new HashEntry(key, value1);
-		entry temp;
-		temp.key = key;
-		temp.bucket = bucket;
-		temp.name = value1;
-		list.emplace_back(temp);
-	}
-
-	~HashMap()
+	~colorhash()
 	{
 		for (unsigned i = 0; i < size; ++i)
 			if (table[i] != nullptr)
 				delete table[i];
 
-		delete[] table;
+		delete table;
 	}
-
-	std::vector<entry> getList(void) { return list; }
-
-	void dumpList(void)
+	unsigned getKey(unsigned char red, unsigned char green, unsigned char blue)
 	{
-		for (unsigned i = 0; i < list.size(); ++i)
+		return ((((red << 8) | green) << 8) | blue);
+	}
+	void put(unsigned key, std::string name)
+	{
+		color *insert = new color;
+		insert->key = key;
+		insert->name = name;
+		insert->count = 0;
+
+		unsigned bucket = key % size;
+		unsigned start = bucket;
+
+		while (true)
 		{
-			std::cout << i << " key=" << list[i].key << "  bucket=" << list[i].bucket << "  name=" << list[i].name << "\n";
+			++comparisons;
+			if (table[bucket] == nullptr)
+			{
+				table[bucket] = insert;
+				buckets.emplace_back(bucket);
+				break;
+			}
+
+			++bucket;
+
+			if (bucket == size)
+				bucket = 0;
+
+			if (bucket == start)
+			{
+				std::cout << "Error hash table full!!\n";
+				exit(-1);
+			}
 		}
 	}
 
-	private:
+	bool check(unsigned key)
+	{
+		unsigned bucket = key % size;
 
-	HashEntry **table;
+		while (true)
+		{
+			++comparisons;
+			if (table[bucket] == nullptr)
+				return false;
+			else if (table[bucket]->key == key)
+				return true;
+
+			++bucket;
+
+			if (bucket == size)
+				bucket = 0;
+		}
+	}
+	void increment(unsigned key)
+	{
+		unsigned bucket = key % size;
+
+		while (true)
+		{
+			++comparisons;
+			if (table[bucket] != nullptr)
+				if (table[bucket]->key == key)
+				{
+					++table[bucket]->count;
+					return;
+				}
+
+			++bucket;
+
+			if (bucket == size)
+				bucket = 0;
+		}
+	}
+	void print(void)
+	{
+		for (unsigned i = 0, max = buckets.size(), bucket; i < max; ++i)
+		{
+			bucket = buckets[i];
+
+			std::cout << table[bucket]->name << " = " << table[bucket]->count << "\n";
+		}
+
+		std::cout << "\nComparisions = " << comparisons << "\n";
+	}
+
+private:
+
+	struct color
+	{
+		unsigned key;
+		std::string name;
+		unsigned count;
+	};
+	color **table;
 	unsigned size;
-	std::vector<entry> list;
-
-	unsigned getBucket(unsigned key)
-	{
-		if (checkKey(key))
-		{
-			unsigned bucket = (key % size);
-
-			while (table[bucket] != nullptr && table[bucket]->getKey() != key)
-				bucket = (bucket + 1) % size;
-
-			return bucket;
-		}
-
-		return UINT_MAX;
-	}
+	std::vector<unsigned> buckets;
+	unsigned comparisons = 0;
 };
 
 int main(int argc, char *argv[])
@@ -187,8 +144,14 @@ int main(int argc, char *argv[])
 	DWORD failReason;
 	SYSTEMTIME loct;
 	double fStartTime, fEndTime, workTime, workUserTime;
+	struct color
+	{
+		std::string name;
+		unsigned count;
+	};
+	colorhash hash(HASH_SIZE);
 
-
+	gotTime1 = GetProcessTimes(myProcess, creation, exitT, kernel, user);
 	u1 = getTime64(user);
 	GetLocalTime(&loct);
 	fStartTime = loct.wHour * 3600 + loct.wMinute * 60 + loct.wSecond + (loct.wMilliseconds / 1000.0);
@@ -200,17 +163,22 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	HashMap copyrightMap(HASH_SIZE);
 	std::string line;
 	std::string name;
+	std::string temp;
 	unsigned short r, g, b;
 	unsigned key;
 	while (getline(colorFile, line))
 	{
 		std::stringstream buffer(line);
 		buffer >> r >> g >> b >> name;
-		key = ((((r << 8) | g) << 8) | b);
-		copyrightMap.put(key, name);
+		while (buffer >> temp)
+		{
+			name += (" " + temp);
+		}
+
+		key = hash.getKey(r, g, b);
+		hash.put(key, name);
 	}
 
 
@@ -245,7 +213,7 @@ int main(int argc, char *argv[])
 	unsigned padding = (width * 3) % 4;
 	unsigned char red, green, blue;
 	bmpFile.seekg(bitmapStart);
-	unsigned unfound = 0, oldkey = 999999,  searchkey = 99999;
+	unsigned unfound = 0;
 	for (unsigned y = 0; y < height; ++y)
 	{
 		for (unsigned x = 0; x < width; ++x)
@@ -253,25 +221,10 @@ int main(int argc, char *argv[])
 			bmpFile.read((char *)&blue, 1);
 			bmpFile.read((char *)&green, 1);
 			bmpFile.read((char *)&red, 1);
-			key = ((((red << 8) | green) << 8) | blue);
+			key = hash.getKey(red, green, blue);
 
-			if (key != searchkey)
-			{
-				std::cout << "checking key=" << key << "\n";
-				searchkey = key;
-			}
-
-			if (copyrightMap.checkKey(key))
-			{
-				if (key != oldkey)
-				{
-					std::cout << "Found key=" << key << "\n";
-					oldkey = key;
-				}
-				
-				copyrightMap.increment(key);
-			}
-				
+			if (hash.check(key))
+				hash.increment(key);
 			else
 				++unfound;
 		}
@@ -280,21 +233,9 @@ int main(int argc, char *argv[])
 
 	bmpFile.close();
 
-	std::vector<entry> list = copyrightMap.getList();
-
-	for (unsigned i = 0, size = list.size(); i < size; ++i)
-	{
-		key = list[i].key;
-		std::cout << "(R=" << ((key & 0xFF0000) >> 16);
-		std::cout << ", G=" << ((key & 0xFF00) >> 8);
-		std::cout << ", B=" << (key & 0xFF);
-		std::cout << ")   key=" << key;
-		std::cout << "   " << copyrightMap.get1(key) << "=" << copyrightMap.get2(key) << "   " << name << "\n";
-	}
-
 	std::cout << "Colors not in file=" << unfound << "\n";
 
-	copyrightMap.dumpList();
+	hash.print();
 
 	gotTime2 = GetProcessTimes(myProcess, creation, exitT, kernel, user);
 	if (!gotTime2) {
@@ -309,8 +250,7 @@ int main(int argc, char *argv[])
 	workUserTime = (u2 - u1) * 100.0 / 1000000000.0; // = usertime
 	workTime = fEndTime - fStartTime; // = system CPU time
 
-
-
+	std::cout << "search took " << workTime << " seconds of system CPU time and " << workUserTime << " seconds of user CPU time.\n\n\n";
 }
 
 ULONGLONG getTime64(LPFILETIME a) {
